@@ -24,3 +24,11 @@ export function getTypeList(data) {
   })
 }
 
+export function getDailyPl(data) {
+  return request({
+    method: 'post',
+    url: '/acct/getDailyProfitAndLost',
+    data
+  })
+}
+

@@ -33,12 +33,34 @@
         </el-form-item>
         <el-form-item>
           <el-button @click="search">查询</el-button>
+          <el-button type="primary" @click="handleAdd">新增</el-button>
         </el-form-item>
       </el-form>
     </el-row>
 
+    <el-dialog :title="添加记录" :visible.sync="addDialogVisible" :close-on-click-modal="false">
+      <el-form ref="userRef" label-width="80px" size="mini" :rules="rules" :model="ioRecord">
+        <el-form-item label="日期" prop="bizDate">
+          <el-date-picker v-model="ioRecord.bizDate" type="date" placeholder="选择日期" />
+        </el-form-item>
+        <el-form-item label="科目" prop="categoryName">
+          <el-input v-model="ioRecord.categoryName" auto-complete="off" />
+        </el-form-item>
+        <el-form-item label="店铺" prop="storeId">
+          <el-input v-model="ioRecord.storeId" auto-complete="off" />
+        </el-form-item>
+        <el-form-item label="金额" prop="amt">
+          <el-input v-model="ioRecord.amt" auto-complete="off" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="commitEvent('userRef')">立即提交</el-button>
+          <el-button @click="addDialogVisible=false">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
     <div>
-      <el-table :data="users" style="width: 100%">
+      <el-table :data="ioItems" style="width: 100%">
         <el-table-column prop="id" label="Id" />
         <el-table-column prop="bizDate" label="日期" />
         <el-table-column prop="storeName" label="店铺名称" />
@@ -47,10 +69,7 @@
         <el-table-column prop="categoryName" label="类目" />
         <el-table-column label="操作" fixed="right" align="center">
           <template slot-scope="scope">
-            <!-- <el-button type="text" size="small">查看</el-button> -->
-            <el-button type="text" size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
             <el-button type="text" size="small" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
-            <el-button type="text" size="small" @click="resetPassword(scope.$index, scope.row)">重置密码</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -79,8 +98,20 @@ export default {
   name: 'User',
   data() {
     return {
+
+      addDialogVisible: false,
+
       dialogTitle: '新增',
-      users: [],
+      ioRecord: {
+        'bizDate': '',
+        'amt': '',
+        'categoryId': '',
+        'categoryName': '',
+        'storeId': '',
+        'stroeNmae': ''
+
+      },
+      ioItems: [],
       typeList: [],
       searchText: '',
       startDate: '',
@@ -120,10 +151,19 @@ export default {
       this.getIoList(this.currentPage, this.pagesize)
     },
 
+    handleAdd() {
+      this.dialogTitle = '添加收支记录'
+      this.showPassWordInput = 'block'
+      this.passwordType = 'password'
+      this.addDialogVisible = true
+      this.user = { userId: 0, username: '', nickname: '', password: '', email: '', mobile: '', status: 1, deptId: '' }
+      this.rolesSelect = []
+    },
+
     getIoList: function(event) {
       var that = this
       getIncomeAndExpendList({}).then(response => {
-        that.users = response.data
+        that.ioItems = response.data
       })
 
       this.getTypeList()
