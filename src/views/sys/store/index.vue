@@ -3,7 +3,7 @@
     <h1 class="d2-mt-0">店铺管理</h1>
     <el-row class="d2-mb" :gutter="10">
       <el-col :span="6">
-        <el-input v-model="searchText" type="text" placeholder="部门名称" :disabled="true" />
+        <el-input v-model="searchText" type="text" placeholder="店铺名称" :disabled="false" />
       </el-col>
       <el-col :span="18">
         <el-button @click="getStores">查询</el-button>
@@ -12,7 +12,7 @@
     </el-row>
 
     <!-- el-table -->
-    <el-table :data="storeList" row-key="deptId" border :tree-props="{children: 'children'}">
+    <el-table :data="storeList" row-key="id" border :tree-props="{children: 'children'}">
       <el-table-column prop="id" label="店铺ID" />
       <el-table-column prop="storeName" label="店铺名称" />
       <el-table-column prop="storeManagerId" label="运营id" />
@@ -26,25 +26,25 @@
     </el-table>
 
     <el-dialog :title="dialogTitle" :visible.sync="addDialogVisible" :close-on-click-modal="false">
-      <el-form label-width="80px" size="mini">
+      <el-form label-width="80px" size="small" :model="store">
         <el-form-item label="店铺名称">
           <el-input v-model="store.storeName" auto-complete="off" />
         </el-form-item>
         <el-form-item label="运营用户" prop="users">
           <el-select
-            v-model="rolesSelect"
+            v-model="userSelect"
             style="width:100%;"
             filterable
             allow-create
             default-first-option
             placeholder="请选择用户"
-            @change="rolesSelectChange"
+            @change="userSelectChange($event)"
           >
             <el-option
               v-for="item in users"
               :key="item.userId"
               :label="item.username"
-              :value="item.userId"
+              :value="item"
             />
           </el-select>
         </el-form-item>
@@ -62,10 +62,10 @@
 import { findStoreList, addStore, deleteStore } from '@/api/store'
 
 export default {
-  name: 'Dept',
+  name: 'Store',
   data() {
     return {
-      dialogTitle: '新增',
+      dialogTitle: '新增店铺',
       searchText: '',
       addDialogVisible: false,
       store: {
@@ -75,24 +75,12 @@ export default {
         memo: ''
       },
       userParam: {
-        userId: 0,
-        username: '',
-        nickname: '',
-        password: '',
-        deptName: '',
-        email: '',
-        mobile: '',
-        status: '1',
-        deptId: '',
-        roleList: [],
-        menuList: [],
-        roles: [],
         pageNum: 1,
         pageSize: 10
       },
       users: [],
       storeList: [],
-      rolesSelect: []
+      userSelect: []
     }
   },
   mounted() {
@@ -116,37 +104,19 @@ export default {
     },
     handleAdd() {
       this.addDialogVisible = true
-      this.dept = {
-        deptId: 0,
-        parentId: -1,
-        parentName: '一级部门',
-        name: '',
-        orderNum: 0,
-        delFlag: 0
-      }
     },
-    handleEdit: function(index, row) {
-      var that = this
-      that.dialogTitle = '编辑'
-      that.addDialogVisible = true
-      that.dept = row
-    },
+
     getStores: function(event) {
       var that = this
       findStoreList({}).then(response => {
         that.storeList = response.data
       })
     },
-    toggleExpanded: function(trIndex) {
-      console.log(trIndex)
-      const record = this.storeList[trIndex]
-      record._expanded = !record._expanded
-      console.log(this.storeList)
-    },
-    rolesSelectChange: function(val) {
-      console.log('rolesSelectChange...', val)
-      this.rolesSelect = val
-      console.log('user.roles...', this.user.roles)
+
+    userSelectChange: function(e) {
+      this.store.storeManagerId = e.userId
+      this.store.storeManagerName = e.username
+      console.log('val...', e)
     },
     addStore: function(event) {
       var that = this
@@ -168,7 +138,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        deleteStore({ deptId: row.storeId }).then(response => {
+        deleteStore({ storeId: row.id }).then(response => {
           if (response) {
             that.$message({
               type: 'success',

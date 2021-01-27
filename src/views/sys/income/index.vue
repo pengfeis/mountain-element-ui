@@ -38,22 +38,55 @@
       </el-form>
     </el-row>
 
-    <el-dialog :title="添加记录" :visible.sync="addDialogVisible" :close-on-click-modal="false">
-      <el-form ref="userRef" label-width="80px" size="mini" :rules="rules" :model="ioRecord">
+    <el-dialog :title="dialogTitle" :visible.sync="addDialogVisible" :close-on-click-modal="false">
+      <el-form ref="incomeRef" label-width="80px" size="mini" :rules="rules" :model="ioRecord">
         <el-form-item label="日期" prop="bizDate">
-          <el-date-picker v-model="ioRecord.bizDate" type="date" placeholder="选择日期" />
+          <el-date-picker v-model="ioRecord.bizDate" type="date" value-format="yyyy-MM-dd" placeholder="选择日期" />
         </el-form-item>
         <el-form-item label="科目" prop="categoryName">
-          <el-input v-model="ioRecord.categoryName" auto-complete="off" />
+          <el-select
+            v-model="selectCategory"
+            placeholder="请选择收支类型"
+            popper-class="optionsContent"
+            value-key="id"
+            @change="selectCategoryChange($event)"
+          >
+            <el-option
+              v-for="item in categoryList"
+              :key="item.id"
+              :label="item.name"
+              :value="item"
+            >
+              <span style="float: left">{{ item.ioDesc }}</span>
+              <span style="float: left">{{ item.name }}</span>
+            </el-option>
+          </el-select>
+
         </el-form-item>
         <el-form-item label="店铺" prop="storeId">
-          <el-input v-model="ioRecord.storeId" auto-complete="off" />
+          <el-select
+            v-model="selectStore"
+            placeholder="请选择店铺"
+            popper-class="optionsContent"
+            value-key="id"
+            @change="selectStoreChange($event)"
+          >
+            <el-option
+              v-for="item in storeList"
+              :key="item.id"
+              :label="item.storeName"
+              :value="item"
+            >
+              <span style="float: left">{{ item.storeName }}</span>
+              <span style="float: left">{{ item.storeManagerName }}</span>
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="金额" prop="amt">
           <el-input v-model="ioRecord.amt" auto-complete="off" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="commitEvent('userRef')">立即提交</el-button>
+          <el-button type="primary" @click="commitEvent('incomeRef')">立即提交</el-button>
           <el-button @click="addDialogVisible=false">取消</el-button>
         </el-form-item>
       </el-form>
@@ -91,32 +124,33 @@
 
 <script>
 
-import { getIncomeAndExpendList, getTypeList } from '@/api/income'
+import { getIncomeAndExpendList, getTypeList, getCategoryList, addIncomeAndExpend } from '@/api/income'
+import { findStoreList } from '@/api/store'
 
 // import qs from 'qs'
 export default {
   name: 'User',
   data() {
     return {
-
       addDialogVisible: false,
-
       dialogTitle: '新增',
       ioRecord: {
         'bizDate': '',
         'amt': '',
         'categoryId': '',
         'categoryName': '',
-        'storeId': '',
-        'stroeNmae': ''
-
+        'storeId': ''
       },
       ioItems: [],
+      categoryList: [],
+      storeList: [],
       typeList: [],
       searchText: '',
       startDate: '',
       endDate: '',
       selectType: '',
+      selectCategory: [],
+      selectStore: [],
       // 默认每页数据量
       pagesize: 10,
       // 当前页码
@@ -125,20 +159,22 @@ export default {
       start: 1,
       // 默认数据总数
       totalCount: 1000,
-      deptTreeData: [],
-      deptTreeDialog: false,
-      defaultExpandedKeys: ['-1'],
-      defaultCheckedKeys: ['-1'],
-      defaultProps: {
-        children: 'children',
-        label: 'name',
-        disabled: function(data, node) {
-          if (node.childNodes.length > 0) {
-            return true
-          } else {
-            return false
-          }
-        }
+
+      rules: {
+        bizDate: [
+          { required: true, message: '请输日期', trigger: 'blur' }
+        ],
+        categoryName: [
+          { required: true, message: '请输昵称', trigger: 'blur' },
+          { min: 1, max: 10, message: '长度在1 到 10 个字符', trigger: ['blur', 'change'] }
+        ],
+        storeId: [
+          { required: true, message: '请选择店铺', trigger: ['blur', 'change'] }
+        ],
+        amt: [
+          { required: true, message: '请输入金额', trigger: 'blur' },
+          { min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: ['blur', 'change'] }
+        ]
       }
     }
   },
@@ -149,6 +185,7 @@ export default {
     // 搜索
     search: function() {
       this.getIoList(this.currentPage, this.pagesize)
+      this.getStores()
     },
 
     handleAdd() {
@@ -156,8 +193,6 @@ export default {
       this.showPassWordInput = 'block'
       this.passwordType = 'password'
       this.addDialogVisible = true
-      this.user = { userId: 0, username: '', nickname: '', password: '', email: '', mobile: '', status: 1, deptId: '' }
-      this.rolesSelect = []
     },
 
     getIoList: function(event) {
@@ -167,12 +202,25 @@ export default {
       })
 
       this.getTypeList()
+      this.getCategoryList()
     },
 
     getTypeList: function(event) {
       var that = this
       getTypeList({}).then(response => {
         that.typeList = response.data
+      })
+    },
+    getCategoryList: function(event) {
+      var that = this
+      getCategoryList({}).then(response => {
+        that.categoryList = response.data
+      })
+    },
+    getStores: function(event) {
+      var that = this
+      findStoreList({}).then(response => {
+        that.storeList = response.data
       })
     },
 
@@ -184,16 +232,38 @@ export default {
       }
     },
 
-    formatRoles(row, column) {
-      var result = ''
-      // 获取单元格数据
-      const val = row[column.property]
-      var temp = null
-      for (var i = 0; i < val.length; i++) {
-        temp = val[i]
-        result = result + temp.roleName + '|'
-      }
-      return result
+    commitEvent: function(incomeRef) {
+      var that = this
+      this.$refs[incomeRef].validate((valid) => {
+        if (valid) {
+          addIncomeAndExpend(that.ioRecord).then(response => {
+            that.addDialogVisible = false
+            that.getIoList()
+            that.ioRecord = {
+              'bizDate': '',
+              'amt': '',
+              'categoryId': '',
+              'categoryName': '',
+              'storeId': ''
+            }
+          })
+        } else {
+          console.log('error submit!!')
+          return false
+        }
+      })
+    },
+
+    selectStoreChange: function(e) {
+      console.log('val...', e)
+      this.ioRecord.storeId = e.id
+    },
+
+    selectCategoryChange: function(e) {
+      console.log('val...', e)
+      this.ioRecord.type = e.ioType
+      this.ioRecord.categoryId = e.id
+      this.ioRecord.categoryName = e.name
     },
 
     // 每页显示数据量变更
@@ -206,12 +276,6 @@ export default {
     handleCurrentChange: function(val) {
       this.currentPage = val
       this.search()
-    },
-    saveParent: function() {
-      this.currentNode = this.$refs.tree.getCheckedNodes()[0]
-      this.deptTreeDialog = false
-      this.user.deptId = this.currentNode.deptId
-      this.user.deptName = this.currentNode.name
     }
 
   }
@@ -229,5 +293,10 @@ $dark_gray:#889aa4;
   cursor: pointer;
   user-select: none;
 }
+
+  .el-select-dropdown__item span{
+    width:100px;
+    text-align:left;
+  }
 </style>
 
