@@ -1,5 +1,40 @@
 <template>
   <div>
+
+    <el-row class="d2-mb">
+      <el-form :inline="true">
+        <el-form-item label="开始时间">
+          <el-date-picker v-model="queryParams.bizDateStart" type="date" value-format="yyyy-MM-dd" placeholder="选择开始日期" />
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker v-model="queryParams.bizDateEnd" type="date" value-format="yyyy-MM-dd" placeholder="选择结束日期" size="medium" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="queryStat">查询</el-button>
+        </el-form-item>
+      </el-form>
+    </el-row>
+
+    <el-table
+      :data="plList"
+      style="width: 100%"
+    >
+      <el-table-column
+        prop="income"
+        label="收入"
+      />
+      <el-table-column
+        prop="expense"
+        label="支出"
+      />
+      <el-table-column
+        prop="pl"
+        label="利润"
+      />
+    </el-table>
+
+    <div />
+
     <div id="ioStat" style="width: 1000px;height: 400px;" />
   </div>
 </template>
@@ -7,12 +42,20 @@
 <script>
 
 import echarts from 'echarts'
-import { getDailyPl } from '@/api/income'
+
+import { getDailyPl, getPlByBizDate } from '@/api/income'
 
 export default {
   name: '',
   data() {
     return {
+      queryParams: {
+        'bizDateStart': null,
+        'bizDateEnd': null
+      },
+
+      plList: [],
+
       charts: '',
       score: '100',
       dimensions: ['bizDate', 'income', 'expense'],
@@ -40,6 +83,11 @@ export default {
     this.$nextTick(function() {
       this.getStatData({})
     })
+    this.getPlList(this.queryParams)
+  },
+
+  created() {
+    this.setTime()
   },
 
   methods: {
@@ -80,11 +128,31 @@ export default {
         ]
       })
     },
+
+    queryStat() {
+      var that = this
+      this.getPlList(that.queryParams)
+      this.getStatData(that.queryParams)
+    },
+    // 默认时间设置 7天后
+    setTime() {
+      const nowD = new Date()
+      nowD.setTime(nowD.getTime() - (7 * 3600 * 1000 * 24))
+      this.queryParams.bizDateStart = nowD
+      console.log(this.queryParams)
+    },
+
     getStatData(params) {
       var that = this
       getDailyPl(params).then(response => {
         that.source = response.data
         that.draw('ioStat')
+      })
+    },
+    getPlList(params) {
+      var that = this
+      getPlByBizDate(params).then(response => {
+        that.plList = response.data
       })
     }
   }

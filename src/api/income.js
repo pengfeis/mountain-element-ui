@@ -40,3 +40,11 @@ export function getDailyPl(data) {
   })
 }
 
+export function getPlByBizDate(data) {
+  return request({
+    method: 'post',
+    url: '/acct/getProfitAndLostByBizDate',
+    data
+  })
+}
+

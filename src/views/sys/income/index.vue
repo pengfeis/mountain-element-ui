@@ -4,32 +4,47 @@
     <el-row class="d2-mb">
       <el-form :inline="true">
         <el-form-item label="店铺名称">
-          <el-input v-model.trim="searchText" type="text" placeholder="账号" />
-        </el-form-item>
-        <el-form-item label="收支">
           <el-select
-            v-model="selectType"
+            v-model="searchIoParams.storeId"
             style="width:100%;"
             filterable
-            multiple
             allow-create
             default-first-option
-            placeholder="请选择收支类型"
+            placeholder="选择店铺"
           >
             <el-option
-              v-for="item in typeList"
-              :key="item.ioType"
-              :label="item.desc"
-              :value="item.ioType"
+              v-for="item in storeList"
+              :key="item.id"
+              :label="item.storeName"
+              :value="item.id"
             />
           </el-select>
 
         </el-form-item>
+        <el-form-item label="科目">
+          <el-select
+            v-model="searchIoParams.categoryId"
+            placeholder="请选择收支类型"
+            popper-class="optionsContent"
+            value-key="id"
+          >
+            <el-option
+              v-for="item in categoryList"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            >
+              <span style="float: left">{{ item.ioDesc }}</span>
+              <span style="float: left">{{ item.name }}</span>
+            </el-option>
+          </el-select>
+
+        </el-form-item>
         <el-form-item label="开始时间">
-          <el-date-picker v-model="startDate" type="date" placeholder="选择开始日期" />
+          <el-date-picker v-model="searchIoParams.bizDateStart" type="date" value-format="yyyy-MM-dd" placeholder="选择开始日期" />
         </el-form-item>
         <el-form-item label="结束时间">
-          <el-date-picker v-model="endDate" type="date" placeholder="选择结束日期" size="medium" />
+          <el-date-picker v-model="searchIoParams.bizDateEnd" type="date" value-format="yyyy-MM-dd" placeholder="选择结束日期" size="medium" />
         </el-form-item>
         <el-form-item>
           <el-button @click="search">查询</el-button>
@@ -151,6 +166,15 @@ export default {
       selectType: '',
       selectCategory: [],
       selectStore: [],
+
+      searchIoParams: {
+        'storeId': null,
+        'categoryId': null,
+        'type': null,
+        'bizDateStart': null,
+        'bizDateEnd': null
+      },
+
       // 默认每页数据量
       pagesize: 10,
       // 当前页码
@@ -158,7 +182,7 @@ export default {
       // 查询的页码
       start: 1,
       // 默认数据总数
-      totalCount: 1000,
+      totalCount: 10,
 
       rules: {
         bizDate: [
@@ -180,12 +204,12 @@ export default {
   },
   mounted() {
     this.search()
+    this.getStores()
   },
   methods: {
     // 搜索
     search: function() {
       this.getIoList(this.currentPage, this.pagesize)
-      this.getStores()
     },
 
     handleAdd() {
@@ -195,10 +219,15 @@ export default {
       this.addDialogVisible = true
     },
 
-    getIoList: function(event) {
+    getIoList: function(pageNum, pageSize) {
       var that = this
-      getIncomeAndExpendList({}).then(response => {
-        that.ioItems = response.data
+
+      that.searchIoParams.pageNum = pageNum
+      that.searchIoParams.pageSize = pageSize
+
+      getIncomeAndExpendList(that.searchIoParams).then(response => {
+        that.ioItems = response.data.list
+        that.totalCount = response.data.total
       })
 
       this.getTypeList()
@@ -257,6 +286,10 @@ export default {
     selectStoreChange: function(e) {
       console.log('val...', e)
       this.ioRecord.storeId = e.id
+    },
+    selectStoreChange4Search: function(e) {
+      console.log('val...', e)
+      this.searchIoParams.storeId = e.id
     },
 
     selectCategoryChange: function(e) {
