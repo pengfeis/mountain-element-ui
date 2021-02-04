@@ -3,6 +3,25 @@
 
     <el-row class="d2-mb">
       <el-form :inline="true">
+        <el-form-item label="店铺名称">
+          <el-select
+            v-model="queryParams.storeId"
+            clearable
+            style="width:100%;"
+            filterable
+            allow-create
+            default-first-option
+            placeholder="选择店铺"
+          >
+            <el-option
+              v-for="item in storeList"
+              :key="item.id"
+              :label="item.storeName"
+              :value="item.id"
+            />
+          </el-select>
+
+        </el-form-item>
         <el-form-item label="开始时间">
           <el-date-picker v-model="queryParams.bizDateStart" type="date" value-format="yyyy-MM-dd" placeholder="选择开始日期" />
         </el-form-item>
@@ -44,17 +63,20 @@
 import echarts from 'echarts'
 
 import { getDailyPl, getPlByBizDate } from '@/api/income'
+import { findStoreList } from '@/api/store'
 
 export default {
   name: '',
   data() {
     return {
       queryParams: {
+        'storeId': null,
         'bizDateStart': null,
         'bizDateEnd': null
       },
 
       plList: [],
+      storeList: [],
 
       charts: '',
       score: '100',
@@ -84,6 +106,7 @@ export default {
       this.getStatData({})
     })
     this.getPlList(this.queryParams)
+    this.getStores()
   },
 
   created() {
@@ -153,6 +176,12 @@ export default {
       var that = this
       getPlByBizDate(params).then(response => {
         that.plList = response.data
+      })
+    },
+    getStores: function(event) {
+      var that = this
+      findStoreList({}).then(response => {
+        that.storeList = response.data
       })
     }
   }
