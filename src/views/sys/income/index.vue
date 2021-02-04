@@ -267,7 +267,7 @@ export default {
         if (valid) {
           addIncomeAndExpend(that.ioRecord).then(response => {
             that.addDialogVisible = false
-            that.getIoList()
+            that.search()
             that.ioRecord = {
               'bizDate': '',
               'amt': '',

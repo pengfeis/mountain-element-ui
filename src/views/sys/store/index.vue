@@ -75,6 +75,7 @@ export default {
         memo: ''
       },
       userParam: {
+        roles: [],
         pageNum: 1,
         pageSize: 10
       },
@@ -85,7 +86,7 @@ export default {
   },
   mounted() {
     this.getStores()
-    this.getUsers(1, 10)
+    this.getUsers(1, 100)
   },
   methods: {
     getUsers: function(pageNum, pageSize) {
