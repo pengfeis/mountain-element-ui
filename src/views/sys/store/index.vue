@@ -38,6 +38,7 @@
             allow-create
             default-first-option
             placeholder="请选择用户"
+            value-key="userId"
             @change="userSelectChange($event)"
           >
             <el-option
