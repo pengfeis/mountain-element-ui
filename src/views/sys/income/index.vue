@@ -139,7 +139,7 @@
 
 <script>
 
-import { getIncomeAndExpendList, getTypeList, getCategoryList, addIncomeAndExpend } from '@/api/income'
+import { getIncomeAndExpendList, getTypeList, getCategoryList, addIncomeAndExpend, deleteInAndEx } from '@/api/income'
 import { findStoreList } from '@/api/store'
 
 // import qs from 'qs'
@@ -281,6 +281,32 @@ export default {
           return false
         }
       })
+    },
+
+    handleDelete: function(index, row) {
+      var that = this
+
+      this.$confirm('此操作将删除该记录, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteInAndEx({ id: row.id }).then(response => {
+          if (response) {
+            that.$message({
+              type: 'success',
+              message: '删除成功!'
+            })
+            that.search()
+          }
+        })
+      })
+        .catch(() => {
+          that.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
+        })
     },
 
     selectStoreChange: function(e) {

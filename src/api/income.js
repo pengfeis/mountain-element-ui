@@ -48,3 +48,10 @@ export function getPlByBizDate(data) {
   })
 }
 
+export function deleteInAndEx(data) {
+  return request({
+    method: 'post',
+    url: '/acct/deleteInAndEx',
+    data
+  })
+}
